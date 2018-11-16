@@ -1,18 +1,11 @@
 package asset
 
 import (
-	"encoding/json"
-	"io/ioutil"
-	"os"
 	"path/filepath"
 	"reflect"
 
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
-)
-
-const (
-	stateFileName = ".openshift_install_state.json"
 )
 
 // Store is a store for the states of assets.
@@ -30,7 +23,7 @@ type Store interface {
 type assetSource int
 
 const (
-	// unsourced indicates that the asset has not been fetched
+	// unfetched indicates that the asset has not been fetched
 	unfetched assetSource = iota
 	// generatedSource indicates that the asset was generated
 	generatedSource
@@ -53,23 +46,24 @@ type assetState struct {
 	presentOnDisk bool
 }
 
-// StoreImpl is the implementation of Store.
-type StoreImpl struct {
-	directory       string
-	assets          map[reflect.Type]*assetState
-	stateFileAssets map[string]json.RawMessage
-	fileFetcher     FileFetcher
+// DiskStore is the implementation of Store.
+type DiskStore struct {
+	directory string
+
+	assets    map[reflect.Type]*assetState
+	stateFile *stateFile
 }
 
 // NewStore returns an asset store that implements the Store interface.
 func NewStore(dir string) (Store, error) {
-	store := &StoreImpl{
-		directory:   dir,
-		fileFetcher: &fileFetcher{directory: dir},
-		assets:      map[reflect.Type]*assetState{},
+	store := &DiskStore{
+		directory: dir,
+		assets:    map[reflect.Type]*assetState{},
+
+		stateFile: &stateFile{},
 	}
 
-	if err := store.loadStateFile(); err != nil {
+	if err := store.stateFile.load(filepath.Join(store.directory, stateFileName)); err != nil {
 		return nil, err
 	}
 	return store, nil
@@ -77,26 +71,23 @@ func NewStore(dir string) (Store, error) {
 
 // Fetch retrieves the state of the given asset, generating it and its
 // dependencies if necessary.
-func (s *StoreImpl) Fetch(asset Asset) error {
+func (s *DiskStore) Fetch(asset Asset) error {
 	if err := s.fetch(asset, ""); err != nil {
 		return err
 	}
-	if err := s.saveStateFile(); err != nil {
+	if err := s.save(); err != nil {
 		return errors.Wrapf(err, "failed to save state")
 	}
-	if wa, ok := asset.(WritableAsset); ok {
-		return errors.Wrapf(s.purge(wa), "failed to purge asset")
-	}
-	return nil
+	return errors.Wrapf(s.purge(asset), "failed to purge asset")
 }
 
 // Destroy removes the asset from all its internal state and also from
 // disk if possible.
-func (s *StoreImpl) Destroy(asset Asset) error {
+func (s *DiskStore) Destroy(asset Asset) error {
 	if sa, ok := s.assets[reflect.TypeOf(asset)]; ok {
 		reflect.ValueOf(asset).Elem().Set(reflect.ValueOf(sa.asset).Elem())
-	} else if s.isAssetInState(asset) {
-		if err := s.loadAssetFromState(asset); err != nil {
+	} else if s.stateFile.exists(asset) {
+		if _, err := asset.Load(s.stateFile.fileFetcher(asset)); err != nil {
 			return err
 		}
 	} else {
@@ -104,86 +95,29 @@ func (s *StoreImpl) Destroy(asset Asset) error {
 		return nil
 	}
 
-	if wa, ok := asset.(WritableAsset); ok {
-		if err := deleteAssetFromDisk(wa, s.directory); err != nil {
-			return err
-		}
-	}
-
-	delete(s.assets, reflect.TypeOf(asset))
-	delete(s.stateFileAssets, reflect.TypeOf(asset).String())
-	return s.saveStateFile()
-}
-
-// loadStateFile retrieves the state from the state file present in the given directory
-// and returns the assets map
-func (s *StoreImpl) loadStateFile() error {
-	path := filepath.Join(s.directory, stateFileName)
-	assets := map[string]json.RawMessage{}
-	data, err := ioutil.ReadFile(path)
-	if err != nil {
-		if os.IsNotExist(err) {
-			return nil
-		}
+	if err := deleteAssetFromDisk(asset, s.directory); err != nil {
 		return err
 	}
-	err = json.Unmarshal(data, &assets)
-	if err != nil {
-		return errors.Wrapf(err, "failed to unmarshal state file %q", path)
-	}
-	s.stateFileAssets = assets
-	return nil
+	delete(s.assets, reflect.TypeOf(asset))
+	delete(s.stateFile.Contents, assetToStateKey(asset))
+	return s.save()
 }
 
-// loadAssetFromState renders the asset object arguments from the state file contents.
-func (s *StoreImpl) loadAssetFromState(asset Asset) error {
-	bytes, ok := s.stateFileAssets[reflect.TypeOf(asset).String()]
-	if !ok {
-		return errors.Errorf("asset %q is not found in the state file", asset.Name())
-	}
-	return json.Unmarshal(bytes, asset)
-}
-
-// isAssetInState tests whether the asset is in the state file.
-func (s *StoreImpl) isAssetInState(asset Asset) bool {
-	_, ok := s.stateFileAssets[reflect.TypeOf(asset).String()]
-	return ok
-}
-
-// saveStateFile dumps the entire state map into a file
-func (s *StoreImpl) saveStateFile() error {
-	if s.stateFileAssets == nil {
-		s.stateFileAssets = map[string]json.RawMessage{}
-	}
-	for k, v := range s.assets {
+func (s *DiskStore) save() error {
+	var assets []Asset
+	for _, v := range s.assets {
 		if v.source == unfetched {
 			continue
 		}
-		data, err := json.MarshalIndent(v.asset, "", "    ")
-		if err != nil {
-			return err
-		}
-		s.stateFileAssets[k.String()] = json.RawMessage(data)
+		assets = append(assets, v.asset)
 	}
-	data, err := json.MarshalIndent(s.stateFileAssets, "", "    ")
-	if err != nil {
-		return err
-	}
-
-	path := filepath.Join(s.directory, stateFileName)
-	if err := os.MkdirAll(filepath.Dir(path), 0755); err != nil {
-		return err
-	}
-	if err := ioutil.WriteFile(path, data, 0644); err != nil {
-		return err
-	}
-	return nil
+	return s.stateFile.save(filepath.Join(s.directory, stateFileName), assets)
 }
 
 // fetch populates the given asset, generating it and its dependencies if
 // necessary, and returns whether or not the asset had to be regenerated and
 // any errors.
-func (s *StoreImpl) fetch(asset Asset, indent string) error {
+func (s *DiskStore) fetch(asset Asset, indent string) error {
 	logrus.Debugf("%sFetching %q...", indent, asset.Name())
 
 	assetState, ok := s.assets[reflect.TypeOf(asset)]
@@ -223,7 +157,7 @@ func (s *StoreImpl) fetch(asset Asset, indent string) error {
 }
 
 // load loads the asset and all of its ancestors from on-disk and the state file.
-func (s *StoreImpl) load(asset Asset, indent string) (*assetState, error) {
+func (s *DiskStore) load(asset Asset, indent string) (*assetState, error) {
 	logrus.Debugf("%sLoading %q...", indent, asset.Name())
 
 	// Stop descent if the asset has already been loaded.
@@ -244,17 +178,10 @@ func (s *StoreImpl) load(asset Asset, indent string) (*assetState, error) {
 	}
 
 	// Try to load from on-disk.
-	var (
-		onDiskAsset WritableAsset
-		foundOnDisk bool
-	)
-	if _, isWritable := asset.(WritableAsset); isWritable {
-		onDiskAsset = reflect.New(reflect.TypeOf(asset).Elem()).Interface().(WritableAsset)
-		var err error
-		foundOnDisk, err = onDiskAsset.Load(s.fileFetcher)
-		if err != nil {
-			return nil, errors.Wrapf(err, "failed to load asset %q", asset.Name())
-		}
+	onDiskAsset := reflect.New(reflect.TypeOf(asset).Elem()).Interface().(Asset)
+	foundOnDisk, err := onDiskAsset.Load(&diskFileFetcher{s.directory})
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to load asset %q", asset.Name())
 	}
 
 	// Try to load from state file.
@@ -266,10 +193,10 @@ func (s *StoreImpl) load(asset Asset, indent string) (*assetState, error) {
 	// Do not need to bother with loading from state file if any of the parents
 	// are dirty because the asset must be re-generated in this case.
 	if !anyParentsDirty {
-		foundInStateFile = s.isAssetInState(asset)
+		foundInStateFile = s.stateFile.exists(asset)
 		if foundInStateFile {
 			stateFileAsset = reflect.New(reflect.TypeOf(asset).Elem()).Interface().(Asset)
-			if err := s.loadAssetFromState(stateFileAsset); err != nil {
+			if _, err := stateFileAsset.Load(s.stateFile.fileFetcher(stateFileAsset)); err != nil {
 				return nil, errors.Wrapf(err, "failed to load asset %q from state file", asset.Name())
 			}
 		}
@@ -326,7 +253,7 @@ func (s *StoreImpl) load(asset Asset, indent string) (*assetState, error) {
 // purge deletes the on-disk assets that are consumed already.
 // E.g., install-config.yml will be deleted after fetching 'manifests'.
 // The target asset is excluded.
-func (s *StoreImpl) purge(excluded WritableAsset) error {
+func (s *DiskStore) purge(excluded Asset) error {
 	for _, assetState := range s.assets {
 		if !assetState.presentOnDisk {
 			continue
@@ -335,7 +262,7 @@ func (s *StoreImpl) purge(excluded WritableAsset) error {
 			continue
 		}
 		logrus.Infof("Consuming %q from target directory", assetState.asset.Name())
-		if err := deleteAssetFromDisk(assetState.asset.(WritableAsset), s.directory); err != nil {
+		if err := deleteAssetFromDisk(assetState.asset, s.directory); err != nil {
 			return err
 		}
 		assetState.presentOnDisk = false

@@ -4,6 +4,7 @@ import (
 	survey "gopkg.in/AlecAivazis/survey.v1"
 
 	"github.com/openshift/installer/pkg/asset"
+	"github.com/openshift/installer/pkg/asset/userprovided"
 )
 
 type password struct {
@@ -19,7 +20,7 @@ func (a *password) Dependencies() []asset.Asset {
 
 // Generate queries for the password from the user.
 func (a *password) Generate(asset.Parents) error {
-	p, err := asset.GenerateUserProvidedAsset(
+	p, err := userprovided.Generate(
 		a.Name(),
 		&survey.Question{
 			Prompt: &survey.Password{

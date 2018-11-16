@@ -6,7 +6,7 @@ import (
 	"sort"
 )
 
-// FileFetcher fetches the asset files from disk.
+// FileFetcher fetches the asset files.
 type FileFetcher interface {
 	// FetchByName returns the file with the given name.
 	FetchByName(string) (*File, error)
@@ -14,12 +14,12 @@ type FileFetcher interface {
 	FetchByPattern(pattern string) ([]*File, error)
 }
 
-type fileFetcher struct {
+type diskFileFetcher struct {
 	directory string
 }
 
 // FetchByName returns the file with the given name.
-func (f *fileFetcher) FetchByName(name string) (*File, error) {
+func (f *diskFileFetcher) FetchByName(name string) (*File, error) {
 	data, err := ioutil.ReadFile(filepath.Join(f.directory, name))
 	if err != nil {
 		return nil, err
@@ -28,7 +28,7 @@ func (f *fileFetcher) FetchByName(name string) (*File, error) {
 }
 
 // FetchByPattern returns the files whose name match the given regexp.
-func (f *fileFetcher) FetchByPattern(pattern string) (files []*File, err error) {
+func (f *diskFileFetcher) FetchByPattern(pattern string) (files []*File, err error) {
 	matches, err := filepath.Glob(filepath.Join(f.directory, pattern))
 	if err != nil {
 		return nil, err

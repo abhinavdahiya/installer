@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 
 	"github.com/openshift/installer/pkg/asset"
-	"github.com/openshift/installer/pkg/asset/templates/content"
+	"github.com/openshift/installer/pkg/asset/templates/common"
 )
 
 const (
@@ -33,13 +33,13 @@ func (t *KubeSystemSecretEtcdClient) Name() string {
 // Generate generates the actual files by this asset
 func (t *KubeSystemSecretEtcdClient) Generate(parents asset.Parents) error {
 	t.fileName = kubeSystemSecretEtcdClientFileName
-	data, err := content.GetBootkubeTemplate(t.fileName)
+	data, err := common.GetBootkubeTemplate(t.fileName)
 	if err != nil {
 		return err
 	}
 	t.FileList = []*asset.File{
 		{
-			Filename: filepath.Join(content.TemplateDir, t.fileName),
+			Filename: filepath.Join(common.TemplateDir, t.fileName),
 			Data:     []byte(data),
 		},
 	}
@@ -53,7 +53,7 @@ func (t *KubeSystemSecretEtcdClient) Files() []*asset.File {
 
 // Load returns the asset from disk.
 func (t *KubeSystemSecretEtcdClient) Load(f asset.FileFetcher) (bool, error) {
-	file, err := f.FetchByName(filepath.Join(content.TemplateDir, kubeSystemSecretEtcdClientFileName))
+	file, err := f.FetchByName(filepath.Join(common.TemplateDir, kubeSystemSecretEtcdClientFileName))
 	if err != nil {
 		if os.IsNotExist(err) {
 			return false, nil

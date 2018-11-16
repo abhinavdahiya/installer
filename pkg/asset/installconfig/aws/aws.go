@@ -11,7 +11,7 @@ import (
 	"github.com/pkg/errors"
 	survey "gopkg.in/AlecAivazis/survey.v1"
 
-	"github.com/openshift/installer/pkg/asset"
+	"github.com/openshift/installer/pkg/asset/userprovided"
 	"github.com/openshift/installer/pkg/types/aws"
 )
 
@@ -55,7 +55,7 @@ func Platform() (*aws.Platform, error) {
 	})
 	sort.Strings(longRegions)
 	sort.Strings(shortRegions)
-	region, err := asset.GenerateUserProvidedAsset(
+	region, err := userprovided.Generate(
 		"AWS Region",
 		&survey.Question{
 			Prompt: &survey.Select{

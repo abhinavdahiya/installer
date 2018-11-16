@@ -42,3 +42,8 @@ func (a *ServiceServingCA) Generate(dependencies asset.Parents) error {
 func (a *ServiceServingCA) Name() string {
 	return "Certificate (service-serving)"
 }
+
+// Load implements Asset.Load
+func (a *ServiceServingCA) Load(f asset.FileFetcher) (bool, error) {
+	return a.CertKey.Load("service-serving-ca", f)
+}

@@ -61,3 +61,8 @@ func (a *APIServerCertKey) Generate(dependencies asset.Parents) error {
 func (a *APIServerCertKey) Name() string {
 	return "Certificate (kube-apiaserver)"
 }
+
+// Load implements Asset.Load
+func (a *APIServerCertKey) Load(f asset.FileFetcher) (bool, error) {
+	return a.CertKey.Load("apiserver", f)
+}

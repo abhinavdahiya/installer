@@ -10,7 +10,7 @@ import (
 	"github.com/pkg/errors"
 	survey "gopkg.in/AlecAivazis/survey.v1"
 
-	"github.com/openshift/installer/pkg/asset"
+	"github.com/openshift/installer/pkg/asset/userprovided"
 	"github.com/openshift/installer/pkg/rhcos"
 	"github.com/openshift/installer/pkg/types/libvirt"
 )
@@ -22,7 +22,7 @@ const (
 
 // Platform collects libvirt-specific configuration.
 func Platform() (*libvirt.Platform, error) {
-	uri, err := asset.GenerateUserProvidedAsset(
+	uri, err := userprovided.Generate(
 		"Libvirt Connection URI",
 		&survey.Question{
 			Prompt: &survey.Input{

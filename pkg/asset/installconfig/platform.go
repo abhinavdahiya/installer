@@ -11,6 +11,7 @@ import (
 	awsconfig "github.com/openshift/installer/pkg/asset/installconfig/aws"
 	libvirtconfig "github.com/openshift/installer/pkg/asset/installconfig/libvirt"
 	openstackconfig "github.com/openshift/installer/pkg/asset/installconfig/openstack"
+	"github.com/openshift/installer/pkg/asset/userprovided"
 	"github.com/openshift/installer/pkg/types"
 	"github.com/openshift/installer/pkg/types/aws"
 	"github.com/openshift/installer/pkg/types/libvirt"
@@ -64,7 +65,7 @@ func (a *platform) Name() string {
 }
 
 func (a *platform) queryUserForPlatform() (string, error) {
-	return asset.GenerateUserProvidedAsset(
+	return userprovided.Generate(
 		"Platform",
 		&survey.Question{
 			Prompt: &survey.Select{

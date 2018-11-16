@@ -4,6 +4,7 @@ import (
 	survey "gopkg.in/AlecAivazis/survey.v1"
 
 	"github.com/openshift/installer/pkg/asset"
+	"github.com/openshift/installer/pkg/asset/userprovided"
 	"github.com/openshift/installer/pkg/validate"
 )
 
@@ -20,7 +21,7 @@ func (a *clusterName) Dependencies() []asset.Asset {
 
 // Generate queries for the cluster name from the user.
 func (a *clusterName) Generate(asset.Parents) error {
-	n, err := asset.GenerateUserProvidedAsset(
+	n, err := userprovided.Generate(
 		a.Name(),
 		&survey.Question{
 			Prompt: &survey.Input{

@@ -5,7 +5,6 @@ import (
 	"path/filepath"
 
 	"github.com/openshift/installer/pkg/asset"
-	"github.com/openshift/installer/pkg/asset/templates/content"
 )
 
 const (
@@ -33,13 +32,13 @@ func (t *CloudCredsSecret) Name() string {
 // Generate generates the actual files by this asset
 func (t *CloudCredsSecret) Generate(parents asset.Parents) error {
 	t.fileName = cloudCredsSecretFileName
-	data, err := content.GetTectonicTemplate(t.fileName)
+	data, err := commonGetTectonicTemplate(t.fileName)
 	if err != nil {
 		return err
 	}
 	t.FileList = []*asset.File{
 		{
-			Filename: filepath.Join(content.TemplateDir, t.fileName),
+			Filename: filepath.Join(common.TemplateDir, t.fileName),
 			Data:     []byte(data),
 		},
 	}
@@ -53,7 +52,7 @@ func (t *CloudCredsSecret) Files() []*asset.File {
 
 // Load returns the asset from disk.
 func (t *CloudCredsSecret) Load(f asset.FileFetcher) (bool, error) {
-	file, err := f.FetchByName(filepath.Join(content.TemplateDir, cloudCredsSecretFileName))
+	file, err := f.FetchByName(filepath.Join(common.TemplateDir, cloudCredsSecretFileName))
 	if err != nil {
 		if os.IsNotExist(err) {
 			return false, nil

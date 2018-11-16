@@ -42,3 +42,8 @@ func (a *APIServerProxyCertKey) Generate(dependencies asset.Parents) error {
 func (a *APIServerProxyCertKey) Name() string {
 	return "Certificate (kube-apiserver-proxy)"
 }
+
+// Load implements Asset.Load
+func (a *APIServerProxyCertKey) Load(f asset.FileFetcher) (bool, error) {
+	return a.CertKey.Load("apiserver-proxy", f)
+}

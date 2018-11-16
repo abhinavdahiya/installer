@@ -4,6 +4,7 @@ import (
 	survey "gopkg.in/AlecAivazis/survey.v1"
 
 	"github.com/openshift/installer/pkg/asset"
+	"github.com/openshift/installer/pkg/asset/userprovided"
 	"github.com/openshift/installer/pkg/validate"
 )
 
@@ -20,7 +21,7 @@ func (a *pullSecret) Dependencies() []asset.Asset {
 
 // Generate queries for the pull secret from the user.
 func (a *pullSecret) Generate(asset.Parents) error {
-	s, err := asset.GenerateUserProvidedAssetForPath(
+	s, err := userprovided.GenerateForPath(
 		a.Name(),
 		&survey.Question{
 			Prompt: &survey.Input{

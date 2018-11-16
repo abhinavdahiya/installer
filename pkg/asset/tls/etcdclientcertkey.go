@@ -42,3 +42,8 @@ func (a *EtcdClientCertKey) Generate(dependencies asset.Parents) error {
 func (a *EtcdClientCertKey) Name() string {
 	return "Certificate (etcd)"
 }
+
+// Load implements Asset.Load
+func (a *EtcdClientCertKey) Load(f asset.FileFetcher) (bool, error) {
+	return a.CertKey.Load("etcd-client", f)
+}

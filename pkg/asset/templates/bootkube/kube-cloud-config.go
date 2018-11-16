@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 
 	"github.com/openshift/installer/pkg/asset"
-	"github.com/openshift/installer/pkg/asset/templates/content"
+	"github.com/openshift/installer/pkg/asset/templates/common"
 )
 
 const (
@@ -33,13 +33,13 @@ func (t *KubeCloudConfig) Name() string {
 // Generate generates the actual files by this asset
 func (t *KubeCloudConfig) Generate(parents asset.Parents) error {
 	t.fileName = kubeCloudConfigFileName
-	data, err := content.GetBootkubeTemplate(t.fileName)
+	data, err := common.GetBootkubeTemplate(t.fileName)
 	if err != nil {
 		return err
 	}
 	t.FileList = []*asset.File{
 		{
-			Filename: filepath.Join(content.TemplateDir, t.fileName),
+			Filename: filepath.Join(common.TemplateDir, t.fileName),
 			Data:     []byte(data),
 		},
 	}
@@ -53,7 +53,7 @@ func (t *KubeCloudConfig) Files() []*asset.File {
 
 // Load returns the asset from disk.
 func (t *KubeCloudConfig) Load(f asset.FileFetcher) (bool, error) {
-	file, err := f.FetchByName(filepath.Join(content.TemplateDir, kubeCloudConfigFileName))
+	file, err := f.FetchByName(filepath.Join(common.TemplateDir, kubeCloudConfigFileName))
 	if err != nil {
 		if os.IsNotExist(err) {
 			return false, nil

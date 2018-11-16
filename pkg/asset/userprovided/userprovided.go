@@ -1,4 +1,5 @@
-package asset
+// Package userprovided provides functions for assets that ask user for inputs.
+package userprovided
 
 import (
 	"io/ioutil"
@@ -8,18 +9,18 @@ import (
 	survey "gopkg.in/AlecAivazis/survey.v1"
 )
 
-// GenerateUserProvidedAsset queries for input from the user.
-func GenerateUserProvidedAsset(inputName string, question *survey.Question, envVarName string) (string, error) {
-	return generateUserProvidedAsset(inputName, question, envVarName, "")
+// Generate queries for input from the user.
+func Generate(inputName string, question *survey.Question, envVarName string) (string, error) {
+	return generate(inputName, question, envVarName, "")
 }
 
-// GenerateUserProvidedAssetForPath queries for input from the user. The input can
+// GenerateForPath queries for input from the user. The input can
 // be read from a file specified in an environment variable.
-func GenerateUserProvidedAssetForPath(inputName string, question *survey.Question, envVarName, pathEnvVarName string) (string, error) {
-	return generateUserProvidedAsset(inputName, question, envVarName, pathEnvVarName)
+func GenerateForPath(inputName string, question *survey.Question, envVarName, pathEnvVarName string) (string, error) {
+	return generate(inputName, question, envVarName, pathEnvVarName)
 }
 
-func generateUserProvidedAsset(inputName string, question *survey.Question, envVarName, pathEnvVarName string) (response string, err error) {
+func generate(inputName string, question *survey.Question, envVarName, pathEnvVarName string) (response string, err error) {
 	defer func() {
 		if err != nil {
 			err = errors.Wrapf(err, "failed to acquire user-provided input %s", inputName)

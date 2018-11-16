@@ -4,6 +4,7 @@ import (
 	survey "gopkg.in/AlecAivazis/survey.v1"
 
 	"github.com/openshift/installer/pkg/asset"
+	"github.com/openshift/installer/pkg/asset/userprovided"
 	"github.com/openshift/installer/pkg/validate"
 )
 
@@ -20,7 +21,7 @@ func (a *emailAddress) Dependencies() []asset.Asset {
 
 // Generate queries for the email address from the user.
 func (a *emailAddress) Generate(asset.Parents) error {
-	email, err := asset.GenerateUserProvidedAsset(
+	email, err := userprovided.Generate(
 		a.Name(),
 		&survey.Question{
 			Prompt: &survey.Input{

@@ -12,7 +12,7 @@ type AdminCertKey struct {
 	CertKey
 }
 
-var _ asset.WritableAsset = (*AdminCertKey)(nil)
+var _ asset.Asset = (*AdminCertKey)(nil)
 
 // Dependencies returns the dependency of the the cert/key pair, which includes
 // the parent CA, and install config if it depends on the install config for
@@ -41,4 +41,9 @@ func (a *AdminCertKey) Generate(dependencies asset.Parents) error {
 // Name returns the human-friendly name of the asset.
 func (a *AdminCertKey) Name() string {
 	return "Certificate (system:admin)"
+}
+
+// Load implements Asset.Load
+func (a *AdminCertKey) Load(f asset.FileFetcher) (bool, error) {
+	return a.CertKey.Load("admin", f)
 }

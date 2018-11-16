@@ -4,6 +4,7 @@ import (
 	survey "gopkg.in/AlecAivazis/survey.v1"
 
 	"github.com/openshift/installer/pkg/asset"
+	"github.com/openshift/installer/pkg/asset/userprovided"
 	"github.com/openshift/installer/pkg/validate"
 )
 
@@ -20,7 +21,7 @@ func (a *baseDomain) Dependencies() []asset.Asset {
 
 // Generate queries for the base domain from the user.
 func (a *baseDomain) Generate(asset.Parents) error {
-	bd, err := asset.GenerateUserProvidedAsset(
+	bd, err := userprovided.Generate(
 		a.Name(),
 		&survey.Question{
 			Prompt: &survey.Input{

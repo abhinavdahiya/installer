@@ -42,3 +42,8 @@ func (a *KubeCA) Generate(dependencies asset.Parents) error {
 func (a *KubeCA) Name() string {
 	return "Certificate (kube-ca)"
 }
+
+// Load implements Asset.Load
+func (a *KubeCA) Load(f asset.FileFetcher) (bool, error) {
+	return a.CertKey.Load("kube-ca", f)
+}

@@ -47,3 +47,8 @@ func (a *MCSCertKey) Generate(dependencies asset.Parents) error {
 func (a *MCSCertKey) Name() string {
 	return "Certificate (mcs)"
 }
+
+// Load implements Asset.Load
+func (a *MCSCertKey) Load(f asset.FileFetcher) (bool, error) {
+	return a.CertKey.Load("machine-config-server", f)
+}

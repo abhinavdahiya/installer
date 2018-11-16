@@ -5,7 +5,7 @@ import (
 	"github.com/pkg/errors"
 	survey "gopkg.in/AlecAivazis/survey.v1"
 
-	"github.com/openshift/installer/pkg/asset"
+	"github.com/openshift/installer/pkg/asset/userprovided"
 	"github.com/openshift/installer/pkg/types/openstack"
 )
 
@@ -15,7 +15,7 @@ const (
 
 // Platform collects OpenStack-specific configuration.
 func Platform() (*openstack.Platform, error) {
-	region, err := asset.GenerateUserProvidedAsset(
+	region, err := userprovided.Generate(
 		"OpenStack Region",
 		&survey.Question{
 			Prompt: &survey.Input{
@@ -35,7 +35,7 @@ func Platform() (*openstack.Platform, error) {
 		return nil, err
 	}
 
-	image, err := asset.GenerateUserProvidedAsset(
+	image, err := userprovided.Generate(
 		"OpenStack Image",
 		&survey.Question{
 			Prompt: &survey.Input{
@@ -55,7 +55,7 @@ func Platform() (*openstack.Platform, error) {
 		return nil, err
 	}
 
-	cloud, err := asset.GenerateUserProvidedAsset(
+	cloud, err := userprovided.Generate(
 		"OpenStack Cloud",
 		&survey.Question{
 			//TODO(russellb) - We could open clouds.yaml here and read the list of defined clouds
@@ -76,7 +76,7 @@ func Platform() (*openstack.Platform, error) {
 		return nil, err
 	}
 
-	extNet, err := asset.GenerateUserProvidedAsset(
+	extNet, err := userprovided.Generate(
 		"OpenStack External Network",
 		&survey.Question{
 			Prompt: &survey.Input{
