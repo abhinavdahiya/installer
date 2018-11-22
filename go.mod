@@ -43,6 +43,8 @@ require (
 	github.com/pborman/uuid v0.0.0-20180906182336-adf5a7427709
 	github.com/peterbourgon/diskv v2.0.1+incompatible // indirect
 	github.com/pkg/errors v0.8.0
+	github.com/shurcooL/httpfs v0.0.0-20171119174359-809beceb2371 // indirect
+	github.com/shurcooL/vfsgen v0.0.0-20181020040650-a97a25d856ca // indirect
 	github.com/sirupsen/logrus v1.2.0
 	github.com/spf13/cobra v0.0.3
 	github.com/spf13/pflag v1.0.3 // indirect
@@ -68,6 +70,9 @@ require (
 	k8s.io/kube-openapi v0.0.0-20181114233023-0317810137be // indirect
 	k8s.io/utils v0.0.0-20181022192358-4c3feeb576b0
 	sigs.k8s.io/cluster-api v0.0.0-20181101193540-fee897706a82
+	sigs.k8s.io/cluster-api-provider-aws v1.0.0-alpha.3.0.20181120224400-129f8fa1d402
 	sigs.k8s.io/controller-runtime v0.1.7 // indirect
 	sigs.k8s.io/testing_frameworks v0.0.0-20180709092217-5818a3a284a1 // indirect
 )
+
+replace sigs.k8s.io/cluster-api-provider-aws v1.0.0-alpha.3.0.20181120224400-129f8fa1d402 => github.com/openshift/cluster-api-provider-aws v0.1.1-0.20181115162746-e6986093d1fb
