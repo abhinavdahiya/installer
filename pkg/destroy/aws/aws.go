@@ -20,6 +20,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 
+	"github.com/openshift/installer/pkg/lineprinter"
 	"github.com/openshift/installer/pkg/version"
 )
 
@@ -69,7 +70,13 @@ func (o *ClusterUninstaller) Run() error {
 		return err
 	}
 
-	awsConfig := &aws.Config{Region: aws.String(o.Region)}
+	// logrus.FieldLogger does not have Trace
+	awsLogger := &lineprinter.Trimmer{WrappedPrint: o.Logger.Debug}
+	awsConfig := &aws.Config{
+		Region:   aws.String(o.Region),
+		LogLevel: aws.LogLevel(aws.LogDebugWithHTTPBody | aws.LogDebugWithRequestRetries | aws.LogDebugWithRequestErrors),
+		Logger:   aws.LoggerFunc(awsLogger.Print),
+	}
 
 	// Relying on appropriate AWS ENV vars (eg AWS_PROFILE, AWS_ACCESS_KEY_ID, etc)
 	awsSession, err := session.NewSession(awsConfig)

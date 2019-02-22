@@ -8,17 +8,21 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/openshift/installer/pkg/lineprinter"
+
+	awssdk "github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/defaults"
 	"github.com/aws/aws-sdk-go/aws/request"
 	"github.com/aws/aws-sdk-go/aws/session"
-	"github.com/openshift/installer/pkg/types/aws"
-	"github.com/openshift/installer/pkg/types/aws/validation"
-	"github.com/openshift/installer/pkg/version"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	survey "gopkg.in/AlecAivazis/survey.v1"
 	ini "gopkg.in/ini.v1"
+
+	"github.com/openshift/installer/pkg/types/aws"
+	"github.com/openshift/installer/pkg/types/aws/validation"
+	"github.com/openshift/installer/pkg/version"
 )
 
 // Platform collects AWS-specific configuration.
@@ -89,8 +93,13 @@ func Platform() (*aws.Platform, error) {
 // GetSession returns an AWS session by checking credentials
 // and, if no creds are found, asks for them and stores them on disk in a config file
 func GetSession() (*session.Session, error) {
+	awsLogger := &lineprinter.Trimmer{WrappedPrint: logrus.Trace}
 	ssn := session.Must(session.NewSessionWithOptions(session.Options{
 		SharedConfigState: session.SharedConfigEnable,
+		Config: awssdk.Config{
+			LogLevel: awssdk.LogLevel(awssdk.LogDebugWithHTTPBody | awssdk.LogDebugWithRequestRetries | awssdk.LogDebugWithRequestErrors),
+			Logger:   awssdk.LoggerFunc(awsLogger.Print),
+		},
 	}))
 	ssn.Config.Credentials = credentials.NewChainCredentials([]credentials.Provider{
 		&credentials.EnvProvider{},
