@@ -159,6 +159,7 @@ func (w *Worker) Generate(dependencies asset.Parents) error {
 		default:
 			return fmt.Errorf("invalid Platform")
 		}
+		machineConfigs = append(machineConfigs, machineconfig.ForHyperthreading(pool.Hyperthreading, "worker"))
 	}
 
 	w.MachineConfigFiles, err = machineconfig.Manifests(machineConfigs, "worker", directory)
