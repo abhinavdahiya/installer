@@ -154,7 +154,9 @@ func (m *Master) Generate(dependencies asset.Parents) error {
 		Data:     data,
 	}
 
-	machineConfigs := []*mcfgv1.MachineConfig{}
+	machineConfigs := []*mcfgv1.MachineConfig{
+		machineconfig.ForHyperthreading(pool.Hyperthreading, "master"),
+	}
 	m.MachineConfigFiles, err = machineconfig.Manifests(machineConfigs, "master", directory)
 	if err != nil {
 		return errors.Wrap(err, "failed to create MachineConfig manifests for master machines")
