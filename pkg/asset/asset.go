@@ -48,6 +48,9 @@ type File struct {
 // directory.
 func PersistToFile(asset WritableAsset, directory string) error {
 	for _, f := range asset.Files() {
+		if f == nil {
+			continue
+		}
 		path := filepath.Join(directory, f.Filename)
 		if err := os.MkdirAll(filepath.Dir(path), 0755); err != nil {
 			return errors.Wrap(err, "failed to create dir")
@@ -64,6 +67,9 @@ func PersistToFile(asset WritableAsset, directory string) error {
 func DeleteAssetFromDisk(asset WritableAsset, directory string) error {
 	logrus.Debugf("Purging asset %q from disk", asset.Name())
 	for _, f := range asset.Files() {
+		if f == nil {
+			continue
+		}
 		path := filepath.Join(directory, f.Filename)
 		if err := os.Remove(path); err != nil && !os.IsNotExist(err) {
 			return errors.Wrap(err, "failed to remove file")
