@@ -3,11 +3,11 @@ output "vpc_id" {
 }
 
 output "az_to_private_subnet_id" {
-  value = "${zipmap(var.availability_zones, local.private_subnet_ids)}"
+  value = "${zipmap(local.private_subnet_azs, local.private_subnet_ids)}"
 }
 
 output "az_to_public_subnet_id" {
-  value = "${zipmap(var.availability_zones, local.public_subnet_ids)}"
+  value = "${zipmap(local.public_subnet_azs, local.public_subnet_ids)}"
 }
 
 output "public_subnet_ids" {

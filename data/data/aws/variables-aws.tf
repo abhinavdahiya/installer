@@ -7,6 +7,36 @@ EOF
   default = "1.0"
 }
 
+variable "aws_vpc_id" {
+  type    = "string"
+  default = ""
+
+  description = <<EOF
+  The VPC for the cluster.
+  If empty, new VPC will be created for the cluster.
+  EOF
+}
+
+variable "aws_public_subnets" {
+  type    = "list"
+  default = []
+
+  description = <<EOF
+  The public subnets for the cluster.
+  If empty, new public subnets will be created for the cluster.
+  EOF
+}
+
+variable "aws_private_subnets" {
+  type    = "list"
+  default = []
+
+  description = <<EOF
+  The private subnets for the cluster.
+  If empty, new public subnets will be created for the cluster.
+  EOF
+}
+
 variable "aws_bootstrap_instance_type" {
   type        = "string"
   description = "Instance type for the bootstrap node. Example: `m4.large`."

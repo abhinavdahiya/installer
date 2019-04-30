@@ -1,4 +1,5 @@
 resource "aws_internet_gateway" "igw" {
+  count  = "${var.vpc_id == "" ? 1 : 0}"
   vpc_id = "${data.aws_vpc.cluster_vpc.id}"
 
   tags = "${merge(map(
@@ -7,6 +8,7 @@ resource "aws_internet_gateway" "igw" {
 }
 
 resource "aws_route_table" "default" {
+  count  = "${var.vpc_id == "" ? 1 : 0}"
   vpc_id = "${data.aws_vpc.cluster_vpc.id}"
 
   tags = "${merge(map(
@@ -15,11 +17,13 @@ resource "aws_route_table" "default" {
 }
 
 resource "aws_main_route_table_association" "main_vpc_routes" {
+  count          = "${var.vpc_id == "" ? 1 : 0}"
   vpc_id         = "${data.aws_vpc.cluster_vpc.id}"
   route_table_id = "${aws_route_table.default.id}"
 }
 
 resource "aws_route" "igw_route" {
+  count                  = "${var.vpc_id == "" ? 1 : 0}"
   destination_cidr_block = "0.0.0.0/0"
   route_table_id         = "${aws_route_table.default.id}"
   gateway_id             = "${aws_internet_gateway.igw.id}"
@@ -30,7 +34,7 @@ resource "aws_route" "igw_route" {
 }
 
 resource "aws_subnet" "public_subnet" {
-  count  = "${local.new_az_count}"
+  count  = "${var.vpc_id == "" ? local.new_az_count : 0}"
   vpc_id = "${data.aws_vpc.cluster_vpc.id}"
 
   cidr_block = "${cidrsubnet(local.new_public_cidr_range, 3, count.index)}"
@@ -43,13 +47,13 @@ resource "aws_subnet" "public_subnet" {
 }
 
 resource "aws_route_table_association" "route_net" {
-  count          = "${local.new_az_count}"
+  count          = "${var.vpc_id == "" ? local.new_az_count : 0}"
   route_table_id = "${aws_route_table.default.id}"
   subnet_id      = "${aws_subnet.public_subnet.*.id[count.index]}"
 }
 
 resource "aws_eip" "nat_eip" {
-  count = "${local.new_az_count}"
+  count = "${var.vpc_id == "" ? local.new_az_count : 0}"
   vpc   = true
 
   tags = "${merge(map(
@@ -63,7 +67,7 @@ resource "aws_eip" "nat_eip" {
 }
 
 resource "aws_nat_gateway" "nat_gw" {
-  count         = "${local.new_az_count}"
+  count         = "${var.vpc_id == "" ? local.new_az_count : 0}"
   allocation_id = "${aws_eip.nat_eip.*.id[count.index]}"
   subnet_id     = "${aws_subnet.public_subnet.*.id[count.index]}"
 
