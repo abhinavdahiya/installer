@@ -12,6 +12,10 @@ import (
 // ValidateMachinePool checks that the specified machine pool is valid.
 func ValidateMachinePool(platform *aws.Platform, p *aws.MachinePool, fldPath *field.Path) field.ErrorList {
 	allErrs := field.ErrorList{}
+	if len(p.Zones) > 0 && len(platform.VPC) > 0 {
+		allErrs = append(allErrs, field.Invalid(fldPath.Child("zones"), p.Zones, "zones must not be specified when vpc is specified"))
+	}
+
 	for i, zone := range p.Zones {
 		if !strings.HasPrefix(zone, platform.Region) {
 			allErrs = append(allErrs, field.Invalid(fldPath.Child("zones").Index(i), zone, fmt.Sprintf("Zone not in configured region (%s)", platform.Region)))

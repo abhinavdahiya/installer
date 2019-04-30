@@ -54,6 +54,23 @@ func ValidatePlatform(p *aws.Platform, fldPath *field.Path) field.ErrorList {
 	if _, ok := Regions[p.Region]; !ok {
 		allErrs = append(allErrs, field.NotSupported(fldPath.Child("region"), p.Region, validRegionValues))
 	}
+
+	if len(p.VPC) > 0 && (len(p.PublicSubnets) == 0 || len(p.PrivateSubnets) == 0) {
+		allErrs = append(allErrs, field.Invalid(fldPath.Child("vpc"), p.VPC, "non-zero public and private subnets must be also be specified"))
+	}
+
+	if len(p.PublicSubnets) > 0 && len(p.VPC) == 0 {
+		allErrs = append(allErrs, field.Invalid(fldPath.Child("publicSubnets"), p.PublicSubnets, "public subnets were specified without VPC"))
+	}
+
+	if len(p.PrivateSubnets) > 0 && len(p.VPC) == 0 {
+		allErrs = append(allErrs, field.Invalid(fldPath.Child("privateSubnets"), p.PrivateSubnets, "private subnets were specified without VPC"))
+	}
+
+	if len(p.PublicSubnets) != len(p.PrivateSubnets) {
+		allErrs = append(allErrs, field.Invalid(fldPath.Child("publicSubnets", "privateSubnets"), p, "public and private subnets must be equal in length"))
+	}
+
 	if p.DefaultMachinePlatform != nil {
 		allErrs = append(allErrs, ValidateMachinePool(p, p.DefaultMachinePlatform, fldPath.Child("defaultMachinePlatform"))...)
 	}

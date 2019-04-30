@@ -49,6 +49,60 @@ func TestValidatePlatform(t *testing.T) {
 			},
 			valid: false,
 		},
+		{
+			name: "invalid vpc, public subnet not provided",
+			platform: &aws.Platform{
+				Region:         "us-east-1",
+				VPC:            "vpc-custom",
+				PrivateSubnets: []string{"subnet-private-1", "subnet-private-2"},
+			},
+			valid: false,
+		},
+		{
+			name: "invalid vpc, private subnet not provided",
+			platform: &aws.Platform{
+				Region:        "us-east-1",
+				VPC:           "vpc-custom",
+				PublicSubnets: []string{"subnet-public-1", "subnet-public-2"},
+			},
+			valid: false,
+		},
+		{
+			name: "invalid public subnet",
+			platform: &aws.Platform{
+				Region:        "us-east-1",
+				PublicSubnets: []string{"subnet-public-1", "subnet-public-2"},
+			},
+			valid: false,
+		},
+		{
+			name: "invalid private subnet",
+			platform: &aws.Platform{
+				Region:         "us-east-1",
+				PrivateSubnets: []string{"subnet-private-1", "subnet-private-2"},
+			},
+			valid: false,
+		},
+		{
+			name: "unequal private and public subnet",
+			platform: &aws.Platform{
+				Region:         "us-east-1",
+				VPC:            "vpc-custom",
+				PrivateSubnets: []string{"subnet-private-1", "subnet-private-2"},
+				PublicSubnets:  []string{"subnet-public-1"},
+			},
+			valid: false,
+		},
+		{
+			name: "valid byo net",
+			platform: &aws.Platform{
+				Region:         "us-east-1",
+				VPC:            "vpc-custom",
+				PublicSubnets:  []string{"subnet-public-1", "subnet-public-2"},
+				PrivateSubnets: []string{"subnet-private-1", "subnet-private-2"},
+			},
+			valid: true,
+		},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
