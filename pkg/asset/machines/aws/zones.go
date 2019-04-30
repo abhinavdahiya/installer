@@ -1,22 +1,32 @@
 package aws
 
 import (
-	"fmt"
-
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/ec2"
 	awsutil "github.com/openshift/installer/pkg/asset/installconfig/aws"
+	"github.com/pkg/errors"
+	"k8s.io/apimachinery/pkg/util/sets"
 )
 
-// AvailabilityZones retrieves a list of availability zones for the given region.
-func AvailabilityZones(region string) ([]string, error) {
+// AvailabilityZones retrieves a list of availability zones for the given region
+//  and subnets.
+// If no subnets are provided, it returns all available AZs for the region.
+func AvailabilityZones(region string, subnets ...string) ([]string, error) {
 	ec2Client, err := ec2Client(region)
 	if err != nil {
 		return nil, err
 	}
+
+	if len(subnets) > 0 {
+		zones, err := fetchAvailabilityZonesForSubnets(ec2Client, region, subnets)
+		if err != nil {
+			return nil, errors.Wrapf(err, "failed fetch for (%s, %v)", region, subnets)
+		}
+		return zones, nil
+	}
 	zones, err := fetchAvailabilityZones(ec2Client, region)
 	if err != nil {
-		return nil, fmt.Errorf("cannot fetch availability zones: %v", err)
+		return nil, errors.Wrapf(err, "failed fetch for %s", region)
 	}
 	return zones, nil
 }
@@ -53,4 +63,20 @@ func fetchAvailabilityZones(client *ec2.EC2, region string) ([]string, error) {
 		zones = append(zones, *zone.ZoneName)
 	}
 	return zones, nil
+}
+
+func fetchAvailabilityZonesForSubnets(client *ec2.EC2, region string, subnets []string) ([]string, error) {
+	sIDs := make([]*string, len(subnets))
+	for i := range subnets {
+		sIDs[i] = aws.String(subnets[i])
+	}
+	resp, err := client.DescribeSubnets(&ec2.DescribeSubnetsInput{SubnetIds: sIDs})
+	if err != nil {
+		return nil, err
+	}
+	zones := []string{}
+	for _, subnet := range resp.Subnets {
+		zones = append(zones, aws.StringValue(subnet.AvailabilityZone))
+	}
+	return sets.NewString(zones...).List(), nil
 }

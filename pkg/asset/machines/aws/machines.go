@@ -70,6 +70,17 @@ func Machines(clusterID string, config *types.InstallConfig, pool *types.Machine
 
 func provider(clusterID string, platform *aws.Platform, mpool *aws.MachinePool, osImage string, azIdx int, role, userDataSecret string) (*awsprovider.AWSMachineProviderConfig, error) {
 	az := mpool.Zones[azIdx]
+	subnetRef := awsprovider.AWSResourceReference{
+		Filters: []awsprovider.Filter{{
+			Name:   "tag:Name",
+			Values: []string{fmt.Sprintf("%s-private-%s", clusterID, az)},
+		}},
+	}
+	if len(platform.PrivateSubnets) > 0 {
+		subnetRef = awsprovider.AWSResourceReference{
+			ID: pointer.StringPtr(platform.PrivateSubnets[azIdx]),
+		}
+	}
 	amiID := osImage
 	tags, err := tagsFromUserTags(clusterID, platform.UserTags)
 	if err != nil {
@@ -95,13 +106,8 @@ func provider(clusterID string, platform *aws.Platform, mpool *aws.MachinePool, 
 		IAMInstanceProfile: &awsprovider.AWSResourceReference{ID: pointer.StringPtr(fmt.Sprintf("%s-%s-profile", clusterID, role))},
 		UserDataSecret:     &corev1.LocalObjectReference{Name: userDataSecret},
 		CredentialsSecret:  &corev1.LocalObjectReference{Name: "aws-cloud-credentials"},
-		Subnet: awsprovider.AWSResourceReference{
-			Filters: []awsprovider.Filter{{
-				Name:   "tag:Name",
-				Values: []string{fmt.Sprintf("%s-private-%s", clusterID, az)},
-			}},
-		},
-		Placement: awsprovider.Placement{Region: platform.Region, AvailabilityZone: az},
+		Subnet:             subnetRef,
+		Placement:          awsprovider.Placement{Region: platform.Region, AvailabilityZone: az},
 		SecurityGroups: []awsprovider.AWSResourceReference{{
 			Filters: []awsprovider.Filter{{
 				Name:   "tag:Name",

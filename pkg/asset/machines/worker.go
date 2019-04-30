@@ -136,7 +136,7 @@ func (w *Worker) Generate(dependencies asset.Parents) error {
 			mpool.Set(ic.Platform.AWS.DefaultMachinePlatform)
 			mpool.Set(pool.Platform.AWS)
 			if len(mpool.Zones) == 0 {
-				azs, err := aws.AvailabilityZones(ic.Platform.AWS.Region)
+				azs, err := aws.AvailabilityZones(ic.Platform.AWS.Region, ic.Platform.AWS.PrivateSubnets...)
 				if err != nil {
 					return errors.Wrap(err, "failed to fetch availability zones")
 				}
