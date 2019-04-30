@@ -12,19 +12,24 @@ import (
 
 type config struct {
 	AMI                     string            `json:"aws_ami"`
+	BootstrapInstanceType   string            `json:"aws_bootstrap_instance_type"`
 	ExtraTags               map[string]string `json:"aws_extra_tags,omitempty"`
-	BootstrapInstanceType   string            `json:"aws_bootstrap_instance_type,omitempty"`
-	MasterInstanceType      string            `json:"aws_master_instance_type,omitempty"`
-	MasterAvailabilityZones []string          `json:"aws_master_availability_zones"`
-	WorkerAvailabilityZones []string          `json:"aws_worker_availability_zones"`
 	IOPS                    int64             `json:"aws_master_root_volume_iops"`
-	Size                    int64             `json:"aws_master_root_volume_size,omitempty"`
-	Type                    string            `json:"aws_master_root_volume_type,omitempty"`
-	Region                  string            `json:"aws_region,omitempty"`
+	MasterAvailabilityZones []string          `json:"aws_master_availability_zones"`
+	MasterInstanceType      string            `json:"aws_master_instance_type"`
+	PrivateSubnets          []string          `json:"aws_private_subnets,omitempty"`
+	PublicSubnets           []string          `json:"aws_public_subnets,omitempty"`
+	Region                  string            `json:"aws_region"`
+	Size                    int64             `json:"aws_master_root_volume_size"`
+	Type                    string            `json:"aws_master_root_volume_type"`
+	VPCID                   string            `json:"aws_vpc_id,omitempty"`
+	WorkerAvailabilityZones []string          `json:"aws_worker_availability_zones"`
 }
 
 // TFVars generates AWS-specific Terraform variables launching the cluster.
-func TFVars(masterConfigs []*v1beta1.AWSMachineProviderConfig, workerConfigs []*v1beta1.AWSMachineProviderConfig) ([]byte, error) {
+// vpcID, publicSubnets, privateSubnets can be empty.
+func TFVars(vpcID string, publicSubnets []string, privateSubnets []string,
+	masterConfigs []*v1beta1.AWSMachineProviderConfig, workerConfigs []*v1beta1.AWSMachineProviderConfig) ([]byte, error) {
 	masterConfig := masterConfigs[0]
 
 	tags := make(map[string]string, len(masterConfig.Tags))
@@ -71,15 +76,18 @@ func TFVars(masterConfigs []*v1beta1.AWSMachineProviderConfig, workerConfigs []*
 	instanceClass := defaults.InstanceClass(masterConfig.Placement.Region)
 
 	cfg := &config{
-		Region:    masterConfig.Placement.Region,
-		ExtraTags: tags,
-		AMI:       *masterConfig.AMI.ID,
-		MasterAvailabilityZones: masterAvailabilityZones,
-		WorkerAvailabilityZones: workerAvailabilityZones,
+		AMI: *masterConfig.AMI.ID,
 		BootstrapInstanceType:   fmt.Sprintf("%s.large", instanceClass),
+		ExtraTags:               tags,
+		MasterAvailabilityZones: masterAvailabilityZones,
 		MasterInstanceType:      masterConfig.InstanceType,
+		PrivateSubnets:          privateSubnets,
+		PublicSubnets:           publicSubnets,
+		Region:                  masterConfig.Placement.Region,
 		Size:                    *rootVolume.EBS.VolumeSize,
 		Type:                    *rootVolume.EBS.VolumeType,
+		VPCID:                   vpcID,
+		WorkerAvailabilityZones: workerAvailabilityZones,
 	}
 
 	if rootVolume.EBS.Iops != nil {

@@ -128,7 +128,11 @@ func (t *TerraformVariables) Generate(parents asset.Parents) error {
 		for i, m := range workers {
 			workerConfigs[i] = m.Spec.Template.Spec.ProviderSpec.Value.Object.(*awsprovider.AWSMachineProviderConfig)
 		}
-		data, err := awstfvars.TFVars(masterConfigs, workerConfigs)
+		p := installConfig.Config.Platform.AWS
+		data, err := awstfvars.TFVars(
+			p.VPC, p.PublicSubnets, p.PrivateSubnets,
+			masterConfigs, workerConfigs,
+		)
 		if err != nil {
 			return errors.Wrapf(err, "failed to get %s Terraform variables", platform)
 		}
