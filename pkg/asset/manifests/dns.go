@@ -45,10 +45,10 @@ func (*DNS) Dependencies() []asset.Asset {
 	return []asset.Asset{
 		&installconfig.InstallConfig{},
 		&installconfig.ClusterID{},
-		// PlatformCredsCheck just checks the creds (and asks, if needed)
+		// PlatformCheck just checks the creds (and asks, if needed) and other platform configuration.
 		// We do not actually use it in this asset directly, hence
 		// it is put in the dependencies but not fetched in Generate
-		&installconfig.PlatformCredsCheck{},
+		&installconfig.PlatformCheck{},
 	}
 }
 
