@@ -10,9 +10,11 @@ import (
 	"github.com/sirupsen/logrus"
 
 	"github.com/openshift/installer/pkg/asset"
+	awscluster "github.com/openshift/installer/pkg/asset/cluster/aws"
 	"github.com/openshift/installer/pkg/asset/installconfig"
 	"github.com/openshift/installer/pkg/asset/password"
 	"github.com/openshift/installer/pkg/terraform"
+	awstypes "github.com/openshift/installer/pkg/types/aws"
 )
 
 // Cluster uses the terraform executable to launch a cluster
@@ -91,6 +93,25 @@ func (c *Cluster) Generate(parents asset.Parents) (err error) {
 		err = err2
 	} else {
 		logrus.Errorf("Failed to read tfstate: %v", err2)
+	}
+
+	switch installConfig.Config.Platform.Name() {
+	case awstypes.Name:
+		// terraform cannot add tags to existing network infra
+		// https://github.com/hashicorp/terraform/issues/17352
+		// k8s requires all subnets be tagged with kubernetes.io/cluster/infra-id
+		// or else LB service never resolves.
+		// https://github.com/kubernetes/kubernetes/blob/9466118e8fa6deaa719b3ec8a03bb6eb846a76fc/pkg/cloudprovider/providers/aws/aws.go#L3109-L3143
+		// https://github.com/kubernetes/kubernetes/blob/9466118e8fa6deaa719b3ec8a03bb6eb846a76fc/pkg/cloudprovider/providers/aws/aws.go#L3172-L3179
+		//
+		// therefore adding tags to private and public subnets
+		// TODO FIX THIS.
+		p := installConfig.Config.Platform.AWS
+		if len(p.VPC) > 0 {
+			if err := awscluster.TagSubnets(append(p.PrivateSubnets, p.PublicSubnets...), fmt.Sprintf("kubernetes.io/cluster/%s", clusterID.InfraID), "shared"); err != nil {
+				return errors.Wrap(err, "failed to tag subnets")
+			}
+		}
 	}
 
 	return err
