@@ -235,6 +235,13 @@ func (o *ClusterUninstaller) Run() error {
 		o.Logger.Debug(err)
 		return err
 	}
+
+	o.Logger.Debug("search for shared resources")
+	if err := o.untagSharedResources(awsSession); err != nil {
+		o.Logger.Debug(err)
+		return err
+	}
+
 	return nil
 }
 
@@ -664,6 +671,42 @@ func (o *ClusterUninstaller) deleteUntaggedResources(awsSession *session.Session
 		return err
 	}
 
+	return nil
+}
+
+func (o *ClusterUninstaller) untagSharedResources(ssn *session.Session) error {
+	client := resourcegroupstaggingapi.New(ssn)
+	lreq := &resourcegroupstaggingapi.GetResourcesInput{
+		TagFilters: []*resourcegroupstaggingapi.TagFilter{{
+			Key:    aws.String(fmt.Sprintf("kubernetes.io/cluster/%s", o.ClusterID)),
+			Values: aws.StringSlice([]string{"shared"}),
+		}},
+		// https://docs.aws.amazon.com/resourcegroupstagging/latest/APIReference/API_UntagResources.html#API_UntagResources_RequestSyntax
+		ResourcesPerPage: aws.Int64(20),
+	}
+	var lastErr error
+	if err := client.GetResourcesPages(lreq, func(results *resourcegroupstaggingapi.GetResourcesOutput, lastPage bool) bool {
+		var arns []string
+		for _, r := range results.ResourceTagMappingList {
+			arns = append(arns, aws.StringValue(r.ResourceARN))
+		}
+
+		ureq := &resourcegroupstaggingapi.UntagResourcesInput{
+			ResourceARNList: aws.StringSlice(arns),
+			TagKeys:         aws.StringSlice([]string{fmt.Sprintf("kubernetes.io/cluster/%s", o.ClusterID)}),
+		}
+		if _, err := client.UntagResources(ureq); err != nil {
+			err = errors.Wrapf(err, "deleting %s", arns)
+			o.Logger.Debug(err)
+			lastErr = err
+		}
+		return !lastPage
+	}); err != nil {
+		if lastErr != nil {
+			return lastErr
+		}
+		return errors.Wrap(err, "failed to get tagged resources")
+	}
 	return nil
 }
 
