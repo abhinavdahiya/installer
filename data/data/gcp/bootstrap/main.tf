@@ -75,3 +75,23 @@ resource "google_compute_instance" "bootstrap" {
     ignore_changes = [min_cpu_platform]
   }
 }
+
+resource "google_compute_instance_group" "bootstrap" {
+  count = var.bootstrap_enabled ? 1 : 0
+
+  name    = "${var.cluster_id}-bootstrap"
+  network = var.network
+  zone    = var.zone
+
+  named_port {
+    name = "ignition"
+    port = "22623"
+  }
+
+  named_port {
+    name = "api"
+    port = "6443"
+  }
+
+  instances = concat(google_compute_instance.bootstrap.*.self_link)
+}

@@ -42,7 +42,7 @@ resource "google_compute_firewall" "master_ingress_from_health_checks" {
 
   allow {
     protocol = "tcp"
-    ports    = ["6080", "22624"]
+    ports    = ["6080", "6443", "22623"]
   }
 
   source_ranges = ["35.191.0.0/16", "130.211.0.0/22"]
@@ -58,7 +58,7 @@ resource "google_compute_firewall" "master_ingress_mcs" {
     ports    = ["22623"]
   }
 
-  source_ranges = [var.network_cidr, google_compute_address.master_nat_ip.address, google_compute_address.worker_nat_ip.address]
+  source_ranges = [var.network_cidr]
   target_tags   = ["${var.cluster_id}-master"]
 }
 
