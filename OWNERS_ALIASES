@@ -4,15 +4,15 @@ aliases:
   installer-approvers:
     - abhinavdahiya
     - crawford
+    - jcpowermac
+    - jhixson74
+    - jstuever
+    - patrickdillon
     - sdodson
     - smarterclayton
     - wking
   installer-reviewers:
-    - jcpowermac
-    - jhixson74
-    - jstuever
     - mtnbikenc
-    - patrickdillon
   libvirt-approvers:
     - abhinavdahiya
     - enxebre
