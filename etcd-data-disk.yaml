@@ -1,0 +1,65 @@
+---
+apiVersion: machineconfiguration.openshift.io/v1
+kind: MachineConfig
+metadata:
+  creationTimestamp: null
+  labels:
+    machineconfiguration.openshift.io/role: master
+  name: 99-master-ssh
+spec:
+  config:
+    ignition:
+      config: {}
+      security:
+        tls: {}
+      timeouts: {}
+      version: 2.2.0
+    networkd: {}
+    passwd:
+      users:
+      - name: core
+        sshAuthorizedKeys:
+        - |
+          ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDUq7W38xCZ9WGSWCvustaMGMT04tRohw6AKGzI7P7xql5lhCAReyt72n9qWQRZsE1YiCSQuTfXI1oc8NpSM7+lMLwj12G8z3I1YT31JHr9LLYg/XIcExkzfBI920CaS82VqmKOpI9+ARHSJBdIbKRI0f5Y+u4xbc5UzKCJX8jcKGG7nEiw8zm+cvAlfOgssMK+qJppIbVcb2iZNTsw5i2aX6FDMyC+b17DQHzBGpNbhZYxuoERZVRcnYctgIzuo6fD60gniX0fVvrchlOnubB1sRYbloP2r6UE22w/dpLKOFE5i7CA0ZzNBERZ94cIKumIH9MiJs1a6bMe89VOjjNV
+    storage: {}
+    systemd: {}
+  osImageURL: ""
+---
+apiVersion: machineconfiguration.openshift.io/v1
+kind: MachineConfig
+metadata:
+  creationTimestamp: null
+  labels:
+    machineconfiguration.openshift.io/role: master
+  name: 10-master-etcd
+spec:
+  config:
+    ignition:
+      config: {}
+      security:
+        tls: {}
+      timeouts: {}
+      version: 2.2.0
+    networkd: {}
+    passwd: {}
+    storage:
+      filesystems:
+      - mount:
+          device: "/dev/sdc"
+          format: xfs
+          wipeFilesystem: true
+        name: etcd
+    systemd:
+      units:
+      - contents: |-
+          [Unit]
+          Before=local-fs.target
+          [Mount]
+          What=/dev/sdc
+          Where=/var/lib/etcd
+          Type=xfs
+          [Install]
+          WantedBy=local-fs.target
+        enable: true
+        name: var-lib-etcd.mount
+  osImageURL: ""
