@@ -55,6 +55,15 @@ resource "azurerm_virtual_machine" "master" {
     disk_size_gb      = var.os_volume_size
   }
 
+  storage_data_disk {
+    name              = "${var.cluster_id}-master-${count.index}_etcdDisk"
+    caching           = "ReadOnly"
+    create_option     = "Empty"
+    managed_disk_type = "Premium_LRS"
+    disk_size_gb      = var.os_volume_size
+    lun = 0
+  }
+
   storage_image_reference {
     id = var.vm_image
   }
